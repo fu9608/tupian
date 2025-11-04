@@ -1,52 +1,367 @@
 <!DOCTYPE html>
+
 <html lang="zh-CN">
+
 <head>
-  <meta charset="UTF-8">
-  <title>二维码展示</title>
-  <style>
-    html, body {
-      width: 100%;
-      height: 100%;
-      margin: 0;
-      background: #181818;
-    }
-    body {
-      min-height: 100vh;
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      justify-content: center;
-      font-family: "Microsoft YaHei", Arial, sans-serif;
-      color: #fff;
-    }
-    h1 {
-      margin-bottom: 24px;
-      font-size: 2rem;
-      text-shadow: 0 2px 12px #0008;
-      letter-spacing: 3px;
-    }
-    .qrcode {
-      background: #fff;
-      padding: 24px;
-      border-radius: 16px;
-      box-shadow: 0 0 28px #0007, 0 2px 12px #22ddee66;
-      display: inline-block;
-    }
-    img.qrimg {
-      width: 256px;
-      height: 256px;
-      display: block;
-    }
-    @media (max-width: 320px) {
-      .qrcode { padding: 8px; }
-      img.qrimg { width: 140px; height: 140px; }
-    }
-  </style>
+
+<meta charset="UTF-8">
+
+<title>PNG图片展示-三角赛博激光隧道背景</title>
+
+<style>
+
+html, body {
+
+width: 100%;
+
+height: 100%;
+
+margin: 0;
+
+overflow: hidden;
+
+background: #070315;
+
+}
+
+body {
+
+text-align: center;
+
+padding-top: 40px;
+
+box-sizing: border-box;
+
+min-height: 100vh;
+
+position: relative;
+
+}
+
+.main-content {
+
+z-index: 10;
+
+position: relative;
+
+}
+
+h1 {
+
+color: #fff;
+
+text-align: center;
+
+text-shadow: 0 0 40px #26d7fe, 0 0 20px #0ff, 0 2px 8px #000;
+
+letter-spacing: 4px;
+
+font-size: 2.3rem;
+
+font-family: 'Orbitron', 'Helvetica Neue', Arial, sans-serif;
+
+}
+
+img {
+
+margin-top: 20px;
+
+max-width: 90vw;
+
+max-height: 72vh;
+
+box-shadow: 0 0 80px 0 #0ff9, 0 0 40px 0 #0bffff99, 0 4px 24px #0008;
+
+border-radius: 15px;
+
+background: #0ff2;
+
+border: 3px solid #00eaff77;
+
+animation: neonImg 2s infinite alternate;
+
+position: relative;
+
+z-index: 11;
+
+}
+
+@keyframes neonImg {
+
+0% { filter: drop-shadow(0 0 10px #00fff5) brightness(1.1);}
+
+100% { filter: drop-shadow(0 0 30px #26d7fe) brightness(1.4);}
+
+}
+
+#tunnel-bg {
+
+position: fixed;
+
+left: 0; top: 0; width: 100vw; height: 100vh;
+
+z-index: 0;
+
+pointer-events: none;
+
+display: block;
+
+background: #0a010e;
+
+}
+
+.main-content, h1, img { position: relative; z-index: 10; }
+
+</style>
+
+<link href=" https://fonts.googleapis.com/css2?family=Orbitron:wght@800&display=swap " rel="stylesheet">
+
 </head>
+
 <body>
-  <h1>二维码展示</h1>
-  <div class="qrcode">
-    <img class="qrimg" src="6.png" alt="二维码">
-  </div>
+
+<canvas id="tunnel-bg"></canvas>
+
+<div class="main-content">
+
+<h1>图片展示（PNG格式）</h1>
+
+<img src="6.png" alt="展示图片">
+
+</div>
+
+<script>
+
+// 隧道参数
+
+const canvas = document.getElementById('tunnel-bg');
+
+const ctx = canvas.getContext('2d');
+
+let w = window.innerWidth, h = window.innerHeight;
+
+canvas.width = w; canvas.height = h;
+
+// 隧道几何
+
+const tunnelDepth = 18; // 三角面数
+
+const baseSize = Math.max(w, h) * 0.4; // 三角基本长度
+
+const speed = 0.18; // 隧道前进速度
+
+const blockCount = 42;
+
+let lines = [
+
+[[0,-1],[Math.sqrt(3)/2,0.5],[-Math.sqrt(3)/2,0.5]],
+
+];
+
+function getTunnelTri(ray, depth, size, zoff, twist=0) {
+
+const a = Math.PI * 2 / 3;
+
+const scale = size / (1 + depth*0.22);
+
+const rot = twist + depth * 0.33 + Math.cos(zoff/3)*0.3;
+
+let tri = [];
+
+for(let i=0;i<3;i++){
+
+let ang = a * i + ray + rot;
+
+let x = Math.cos(ang) * scale + w/2;
+
+let y = Math.sin(ang) * scale + h/2;
+
+tri.push([x, y]);
+
+}
+
+return tri;
+
+}
+
+function drawTriangle(tri, color, glow=42, level=1) {
+
+ctx.save();
+
+ctx.beginPath();
+
+ctx.moveTo(tri[0][0], tri[0][1]);
+
+ctx.lineTo(tri[1][0], tri[1][1]);
+
+ctx.lineTo(tri[2][0], tri[2][1]);
+
+ctx.closePath();
+
+ctx.shadowColor = color;
+
+ctx.shadowBlur = glow;
+
+ctx.globalAlpha = Math.pow(0.82, level);
+
+ctx.strokeStyle = color;
+
+ctx.lineWidth = 4.6 + (16-level*0.6);
+
+ctx.stroke();
+
+ctx.restore();
+
+}
+
+// 数据块
+
+let blocks = [];
+
+for(let i=0; i<blockCount; i++){
+
+blocks.push({
+
+z: Math.random() * tunnelDepth,
+
+ang: Math.random()*Math.PI*2,
+
+offset: Math.random()*Math.PI*2*3,
+
+speed: speed*0.4 + Math.random()*speed*0.7
+
+});
+
+}
+
+function drawBlock(b,zoff){
+
+let scale = baseSize*1.22 / (1 + b.z*0.23);
+
+let ang = b.ang + zoff*1.3 + Math.sin(zoff/2 + b.offset)*0.6;
+
+let x = Math.cos(ang)*scale + w/2;
+
+let y = Math.sin(ang)*scale + h/2;
+
+let alpha = 0.26 + 0.7 * (1 - b.z/tunnelDepth) * (0.4 + Math.sin(zoff+b.offset)*0.6);
+
+ctx.save();
+
+ctx.beginPath();
+
+ctx.arc(x, y, 14 + Math.pow(1.16, tunnelDepth-b.z)*2, 0, Math.PI*2);
+
+ctx.fillStyle = '#51edff';
+
+ctx.shadowColor = '#99f9ff';
+
+ctx.globalAlpha = alpha;
+
+ctx.shadowBlur = 32;
+
+ctx.fill();
+
+ctx.restore();
+
+ctx.save();
+
+ctx.beginPath();
+
+ctx.arc(x, y, 24, 0, Math.PI*2);
+
+ctx.strokeStyle = '#09bfff';
+
+ctx.globalAlpha = alpha*0.21;
+
+ctx.lineWidth = 8;
+
+ctx.shadowBlur = 32;
+
+ctx.stroke();
+
+ctx.restore();
+
+}
+
+let tick = 1;
+
+function renderTunnel() {
+
+w = window.innerWidth; h = window.innerHeight;
+
+canvas.width = w; canvas.height = h;
+
+ctx.clearRect(0,0,w,h);
+
+let zoff = tick*speed*1.33;
+
+for(let d=tunnelDepth; d>=1; d--) {
+
+let tri = getTunnelTri(0, d, baseSize, zoff, zoff/2);
+
+drawTriangle(tri, '#26d7fe', 70-d*2.8, d);
+
+if(d===1 || d===tunnelDepth) drawTriangle(tri, '#fff', 12-d, d);
+
+}
+
+let cent = getTunnelTri(0, 1, baseSize*0.63, zoff, zoff/2);
+
+ctx.save();
+
+ctx.globalAlpha = 0.56 + Math.sin(tick/8)*0.2;
+
+for(let i=0; i<3; i++) {
+
+ctx.beginPath();
+
+ctx.moveTo(w/2, h/2);
+
+ctx.lineTo(cent[i][0], cent[i][1]);
+
+ctx.strokeStyle = "#6cfeff";
+
+ctx.shadowColor = "#0cfadf";
+
+ctx.shadowBlur = 38;
+
+ctx.lineWidth = 6;
+
+ctx.stroke();
+
+}
+
+ctx.restore();
+
+blocks.forEach((b)=>{
+
+drawBlock(b, zoff);
+
+b.z -= b.speed;
+
+if(b.z<1) { b.z += tunnelDepth-1; b.ang = Math.random()*Math.PI*2; }
+
+});
+
+tick++;
+
+requestAnimationFrame(renderTunnel);
+
+}
+
+renderTunnel();
+
+window.addEventListener('resize', ()=>{
+
+w = window.innerWidth; h = window.innerHeight;
+
+canvas.width = w; canvas.height = h;
+
+});
+
+</script>
+
 </body>
+
 </html>
