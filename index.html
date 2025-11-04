@@ -4,12 +4,101 @@
   <meta charset="UTF-8">
   <title>静态图片展示（PNG格式）</title>
   <style>
-    body { text-align: center; padding-top: 40px; background-color: #f7f7f7;}
-    img { max-width: 90vw; max-height: 80vh; box-shadow: 0 4px 20px rgba(0,0,0,0.2);}
+    /* 星空科技感背景 */
+    body {
+      text-align: center;
+      padding-top: 40px;
+      min-height: 100vh;
+      background: radial-gradient(ellipse at bottom,#1b2735 0%,#090a0f 100%);
+      overflow: hidden;
+      position: relative;
+    }
+    /* 星空点动画 */
+    .stars {
+      position: fixed;
+      width: 100vw;
+      height: 100vh;
+      top: 0; left: 0;
+      z-index: 0;
+      pointer-events:none;
+    }
+    h1 {
+      z-index: 1; 
+      position: relative; 
+      color: #fff; 
+      text-shadow: 0 4px 30px #0055ff90, 0 2px 8px #000;
+      letter-spacing: 2px;
+    }
+    img {
+      max-width: 90vw;
+      max-height: 80vh;
+      box-shadow: 0 8px 40px #00bfff66,0 4px 10px #0005;
+      border-radius: 10px;
+      background: #fff6;
+      z-index: 1;
+      position: relative;
+    }
   </style>
 </head>
 <body>
   <h1>图片展示（PNG格式）</h1>
   <img src="6.png" alt="展示图片">
+  <!-- 星空canvas -->
+  <canvas id="stars" class="stars"></canvas>
+  <script>
+    // 星空动画 by Copilot
+    const canvas = document.getElementById('stars');
+    const ctx = canvas.getContext('2d');
+    let w = window.innerWidth, h = window.innerHeight;
+    canvas.width = w;
+    canvas.height = h;
+
+    const numStars = 200;
+    let stars = [];
+    for (let i = 0; i < numStars; i++) {
+      stars.push({
+        x: Math.random() * w,
+        y: Math.random() * h,
+        r: Math.random() * 1.2 + 0.3,
+        speed: Math.random() * 0.4 + 0.05,
+        twinkle: Math.random(),
+      });
+    }
+
+    function drawStars() {
+      ctx.clearRect(0,0,w,h);
+      for (let star of stars) {
+        // Twinkle effect
+        let alpha = 0.7 + (Math.sin(Date.now()/500 + star.twinkle*10) * 0.3);
+        ctx.save();
+        ctx.globalAlpha = alpha;
+        ctx.beginPath();
+        ctx.arc(star.x, star.y, star.r, 0, 2 * Math.PI);
+        ctx.fillStyle = "#fff";
+        ctx.shadowColor = "#6cfaff";
+        ctx.shadowBlur = 12;
+        ctx.fill();
+        ctx.restore();
+
+        // Move downward slowly like falling
+        star.y += star.speed;
+        if (star.y > h) {
+          star.x = Math.random() * w;
+          star.y = -2;
+          star.r = Math.random() * 1.2 + 0.3;
+        }
+      }
+      requestAnimationFrame(drawStars);
+    }
+
+    drawStars();
+
+    window.addEventListener('resize', ()=>{
+      w = window.innerWidth;
+      h = window.innerHeight;
+      canvas.width = w;
+      canvas.height = h;
+    });
+  </script>
 </body>
 </html>
