@@ -4,100 +4,162 @@
   <meta charset="UTF-8">
   <title>静态图片展示（PNG格式）</title>
   <style>
-    /* 星空科技感背景 */
     body {
       text-align: center;
       padding-top: 40px;
       min-height: 100vh;
-      background: radial-gradient(ellipse at bottom,#1b2735 0%,#090a0f 100%);
+      margin: 0;
+      background: radial-gradient(ellipse at bottom,#0a0a1a 0%,#111 100%);
       overflow: hidden;
       position: relative;
     }
-    /* 星空点动画 */
-    .stars {
+    .stars, .lines {
       position: fixed;
       width: 100vw;
       height: 100vh;
       top: 0; left: 0;
       z-index: 0;
       pointer-events:none;
+      display: block;
     }
     h1 {
       z-index: 1; 
       position: relative; 
       color: #fff; 
-      text-shadow: 0 4px 30px #0055ff90, 0 2px 8px #000;
-      letter-spacing: 2px;
+      text-shadow: 0 0 40px #00fff5, 0 0 16px #0077ff;
+      letter-spacing: 4px;
+      font-size: 2.5rem;
+      font-family: 'Orbitron', 'Helvetica Neue', Arial, sans-serif;
+      margin-top: 24px;
+      margin-bottom: 24px;
     }
     img {
       max-width: 90vw;
-      max-height: 80vh;
-      box-shadow: 0 8px 40px #00bfff66,0 4px 10px #0005;
-      border-radius: 10px;
-      background: #fff6;
+      max-height: 72vh;
+      box-shadow:
+        0 0 80px 0 #0ff9, 0 0 40px 0 #80eaff,
+        0 8px 40px #00bfff66, 0 4px 10px #000a;
+      border-radius: 18px;
+      background: #0ff2;
       z-index: 1;
       position: relative;
+      border: 3px solid #00eaff77;
+      animation: neonImg 2s infinite alternate ease-in-out;
+    }
+    @keyframes neonImg {
+      0% { filter: drop-shadow(0 0 10px #00fff5) brightness(1.1);}
+      100% { filter: drop-shadow(0 0 30px #0ff) brightness(1.4);}
     }
   </style>
+  <!-- Orbitron Google Fonts: futuristic look -->
+  <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@800&display=swap" rel="stylesheet">
 </head>
 <body>
   <h1>图片展示（PNG格式）</h1>
   <img src="6.png" alt="展示图片">
-  <!-- 星空canvas -->
+  <!-- 星空星点canvas -->
   <canvas id="stars" class="stars"></canvas>
+  <!-- 动态射线canvas -->
+  <canvas id="lines" class="lines"></canvas>
   <script>
-    // 星空动画 by Copilot
-    const canvas = document.getElementById('stars');
-    const ctx = canvas.getContext('2d');
+    // 更炫酷动态星空 with 星星 and moving lines
+    const starsCanvas = document.getElementById('stars');
+    const linesCanvas = document.getElementById('lines');
+    const starsCtx = starsCanvas.getContext('2d');
+    const linesCtx = linesCanvas.getContext('2d');
     let w = window.innerWidth, h = window.innerHeight;
-    canvas.width = w;
-    canvas.height = h;
+    starsCanvas.width = linesCanvas.width = w;
+    starsCanvas.height = linesCanvas.height = h;
 
+    // -- 动态星星参数 --
     const numStars = 200;
     let stars = [];
     for (let i = 0; i < numStars; i++) {
       stars.push({
         x: Math.random() * w,
         y: Math.random() * h,
-        r: Math.random() * 1.2 + 0.3,
-        speed: Math.random() * 0.4 + 0.05,
-        twinkle: Math.random(),
+        r: Math.random() * 1.5 + 0.7,
+        speed: Math.random() * 0.7 + 0.15,
+        twinkle: Math.random() * 15,
+        hue: Math.random() * 80 + 170
+      });
+    }
+    // -- 霓虹科技射线参数 --
+    const numLines = 12, lineLength = w * 1.2;
+    let lines = [];
+    for (let l = 0; l < numLines; l++) {
+      const ang = (l / numLines) * Math.PI * 2 + Math.random();
+      lines.push({
+        theta: ang,
+        speed: (Math.random()-0.5) * 0.003 + 0.001,
+        color: `hsla(${Math.floor(190 + 60 * Math.sin(ang))},100%,61%,0.30)`
       });
     }
 
+    let t = 0;
     function drawStars() {
-      ctx.clearRect(0,0,w,h);
+      starsCtx.clearRect(0,0,w,h);
       for (let star of stars) {
         // Twinkle effect
-        let alpha = 0.7 + (Math.sin(Date.now()/500 + star.twinkle*10) * 0.3);
-        ctx.save();
-        ctx.globalAlpha = alpha;
-        ctx.beginPath();
-        ctx.arc(star.x, star.y, star.r, 0, 2 * Math.PI);
-        ctx.fillStyle = "#fff";
-        ctx.shadowColor = "#6cfaff";
-        ctx.shadowBlur = 12;
-        ctx.fill();
-        ctx.restore();
+        let alpha = 0.67 + (Math.sin(t*0.3 + star.twinkle*10) * 0.29);
+        starsCtx.save();
+        starsCtx.globalAlpha = alpha;
+        starsCtx.beginPath();
+        starsCtx.arc(star.x, star.y, star.r, 0, 2 * Math.PI);
+        starsCtx.fillStyle = `hsl(${star.hue},98%,92%)`;
+        starsCtx.shadowColor = `hsl(${star.hue},100%,75%)`;
+        starsCtx.shadowBlur = 20;
+        starsCtx.fill();
+        starsCtx.restore();
 
-        // Move downward slowly like falling
-        star.y += star.speed;
-        if (star.y > h) {
+        // Move downward
+        star.y += star.speed * (star.r/2);
+        if (star.y > h+2) {
           star.x = Math.random() * w;
           star.y = -2;
-          star.r = Math.random() * 1.2 + 0.3;
         }
-      }
-      requestAnimationFrame(drawStars);
+      } 
     }
 
-    drawStars();
+    function drawLines() {
+      linesCtx.clearRect(0,0,w,h);
+      for (let line of lines) {
+        let angle = line.theta + Math.sin(t * 0.003 + line.theta * 3) * 0.35;
+        let cx = w/2, cy = h/2, rad = lineLength * (0.6 + Math.sin(t * 0.002 + line.theta));
+        let x2 = cx + Math.cos(angle)*rad;
+        let y2 = cy + Math.sin(angle)*rad;
+        linesCtx.save();
+        linesCtx.strokeStyle = line.color;
+        linesCtx.globalAlpha = 0.62 + 0.32 * Math.sin(t*0.012 + line.theta*4);
+        linesCtx.shadowColor = "#00fbff";
+        linesCtx.shadowBlur = 24;
+        linesCtx.lineWidth = 2.2 + 2.5 * Math.abs(Math.cos(angle - t*0.001));
+        linesCtx.beginPath();
+        linesCtx.moveTo(cx, cy);
+        linesCtx.lineTo(x2, y2);
+        linesCtx.stroke();
+        linesCtx.restore();
 
+        // rotate for dynamic effect
+        line.theta += line.speed + Math.sin(t*0.007 + line.theta) * 0.0008;
+      }
+    }
+
+    // 动画主循环
+    function animate() {
+      t += 1;
+      drawStars();
+      drawLines();
+      requestAnimationFrame(animate);
+    }
+    animate();
+
+    // 自适应大小
     window.addEventListener('resize', ()=>{
       w = window.innerWidth;
       h = window.innerHeight;
-      canvas.width = w;
-      canvas.height = h;
+      starsCanvas.width = linesCanvas.width = w;
+      starsCanvas.height = linesCanvas.height = h;
     });
   </script>
 </body>
